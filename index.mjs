@@ -5,7 +5,7 @@ const app = express();
 
 app.use(express.json());
 
-// Root route to provide usage instructions
+// Root route
 app.get('/', (req, res) => {
     res.send('Proxy server running. Use /proxy?url=<URL> to access a site.');
 });
@@ -21,6 +21,11 @@ app.get('/proxy', (req, res) => {
 
     // Forward the request to the specified URL
     request(url)
+        .on('response', (response) => {
+            // Copy headers from the response
+            res.set(response.headers);
+            res.status(response.statusCode);
+        })
         .on('error', (err) => {
             console.error(err);
             res.status(500).send('Error fetching the URL.');
