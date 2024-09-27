@@ -1,6 +1,6 @@
 import express from 'express';
 import request from 'request';
-import path from 'path';
+import cheerio from 'cheerio';
 
 const app = express();
 
@@ -35,17 +35,46 @@ app.get('/fetch', (req, res) => {
     }
 
     // Forward the request to the specified URL
-    request(url)
-        .on('response', (response) => {
-            // Copy headers and status code
-            res.set(response.headers);
-            res.status(response.statusCode);
-        })
-        .on('error', (err) => {
-            console.error(err);
-            res.status(500).send('Error fetching the URL.');
-        })
-        .pipe(res);
+    request(url, (error, response, body) => {
+        if (error) {
+            console.error(error);
+            return res.status(500).send('Error fetching the URL.');
+        }
+
+        // Load the HTML into Cheerio for manipulation
+        const $ = cheerio.load(body);
+
+        // Rewrite image URLs to go through the proxy
+        $('img').each((_, img) => {
+            const src = $(img).attr('src');
+            if (src) {
+                $(img).attr('src', `/fetch?url=${encodeURIComponent(src)}`);
+            }
+        });
+
+        // Rewrite link URLs (for CSS/JS)
+        $('link[rel="stylesheet"], script').each((_, el) => {
+            const src = $(el).attr('src') || $(el).attr('href');
+            if (src) {
+                const newSrc = `/fetch?url=${encodeURIComponent(src)}`;
+                if ($(el).is('link')) {
+                    $(el).attr('href', newSrc);
+                } else {
+                    $(el).attr('src', newSrc);
+                }
+            }
+        });
+
+        // Set headers and send the modified HTML
+        res.set(response.headers);
+        res.status(response.statusCode).send($.html());
+    });
+});
+
+// Directly proxy image requests
+app.get('/images/*', (req, res) => {
+    const imageUrl = decodeURIComponent(req.path.slice(7)); // Remove '/images/' prefix
+    request(imageUrl).pipe(res);
 });
 
 // Define the port to listen on
