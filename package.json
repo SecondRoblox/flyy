@@ -1,14 +1,18 @@
 {
-  "name": "your-app-name",
+  "name": "nodejs",
   "version": "1.0.0",
-  "description": "A brief description of your app",
+  "description": "",
   "main": "index.mjs",
   "scripts": {
     "start": "node index.mjs"
   },
   "dependencies": {
-    "express": "^4.x.x",
-    "request": "^2.x.x"
+    "@types/node": "^18.0.6",
+    "express": "^4.21.0",
+    "request": "^2.88.2",
+    "cheerio": "^1.0.0"
   },
-  "type": "module"
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
