@@ -1,17 +1,32 @@
 import express from 'express';
 import request from 'request';
+import path from 'path';
 
 const app = express();
 
-app.use(express.json());
-
-// Root route
+// Serve static HTML for the proxy interface
 app.get('/', (req, res) => {
-    res.send('Proxy server running. Use /proxy?url=<URL> to access a site.');
+    res.send(`
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Proxy Server</title>
+        </head>
+        <body>
+            <h1>Proxy Server</h1>
+            <form action="/fetch" method="GET">
+                <input type="text" name="url" placeholder="Enter URL to fetch" required>
+                <button type="submit">Fetch</button>
+            </form>
+        </body>
+        </html>
+    `);
 });
 
-// Proxy route
-app.get('/proxy', (req, res) => {
+// Proxy route to fetch content
+app.get('/fetch', (req, res) => {
     const url = req.query.url;
 
     // Validate the URL
@@ -22,7 +37,7 @@ app.get('/proxy', (req, res) => {
     // Forward the request to the specified URL
     request(url)
         .on('response', (response) => {
-            // Copy headers from the response
+            // Copy headers and status code
             res.set(response.headers);
             res.status(response.statusCode);
         })
